@@ -11,6 +11,8 @@ import { EmployeeService } from './employee.service';
 })
 export class AppComponent implements OnInit{
   public employees: Employee[];
+  public editEmployee: Employee; //represents employee clicked to be edited
+  public deleteEmployee: Employee; //represents employee clicked to be deleted
 
   constructor(private employeeService: EmployeeService) { }
 
@@ -30,6 +32,36 @@ export class AppComponent implements OnInit{
     );
   }
 
+  public searchEmployees(key: string): void {
+
+    console.log(key);
+
+    //create an array to store the filtered result of employees based on user's search input
+    const results: Employee[] = [];
+
+    //looping through the list of all employees to find the match with user's search input
+    for (const employee of this.employees) {
+
+      //using Array.prototype.indexOf
+      //The indexOf() method returns the first index at which a given element can be found in the array, or -1 if it is not present.
+      if (employee.name.toLowerCase().indexOf(key.toLowerCase()) !== -1
+      || employee.email.toLowerCase().indexOf(key.toLowerCase()) !== -1
+      || employee.phone.toLowerCase().indexOf(key.toLowerCase()) !== -1
+      || employee.jobTitle.toLowerCase().indexOf(key.toLowerCase()) !== -1) {
+        results.push(employee);
+      }
+
+    }
+
+    this.employees = results;
+
+    if (results.length === 0 || !key) {
+      this.getEmployees();
+    }
+
+  }
+
+
   public onOpenModal(employee: Employee, mode: string): void {
     const container = document.getElementById('main-container');
     const button = document.createElement('button');
@@ -45,12 +77,15 @@ export class AppComponent implements OnInit{
 
     //if button is edit employee
     if(mode === 'edit'){
+      //when modal is opened through edit button - set employee to the employee to be edited
+      this.editEmployee = employee;
       //data-target will be id 'updateEmployeeModal' - same in app.component.html
       button.setAttribute('data-target', '#updateEmployeeModal');
     }
 
-    //of button is delete employee
+    //if button is delete employee
     if(mode === 'delete'){
+      this.deleteEmployee = employee;
       //data-target will be id 'deleteEmployeeModal' - same in app.component.html
       button.setAttribute('data-target', '#deleteEmployeeModal');
     }
@@ -74,6 +109,8 @@ export class AppComponent implements OnInit{
         console.log(response);
         //reload and show original and newly added employee
         this.getEmployees();
+
+        //reset to clear out previously filled out fields
         addForm.reset();
       },
       (error: HttpErrorResponse) => {
@@ -82,5 +119,29 @@ export class AppComponent implements OnInit{
       }
     )
   }
-  
+
+  public onUpdateEmployee(employee: Employee): void {
+    this.employeeService.updateEmployee(employee).subscribe(
+      (response: Employee) => {
+        console.log(response);
+        this.getEmployees();
+      },
+      (error: HttpErrorResponse) => {
+        alert(error.message);
+      }
+    );
+  }
+
+  public onDeleteEmployee(employeeId: number): void {
+    this.employeeService.deleteEmployee(employeeId).subscribe(
+      (response: void) => {
+        console.log(response);
+        this.getEmployees();
+      },
+      (error: HttpErrorResponse) => {
+        alert(error.message);
+      }
+    );
+  }
+
 }
